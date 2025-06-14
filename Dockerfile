@@ -14,8 +14,5 @@ COPY . ./
 # Install project dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose port 5000
-EXPOSE 5000
-
 # Run the web service on container startup.
 CMD ["python", "backend/app.py"]
