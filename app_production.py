@@ -1,6 +1,9 @@
+import os
+# Fix PyTorch loading issues before any imports
+os.environ['TORCH_SERIALIZATION_WEIGHTS_ONLY'] = 'False'
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import os
 import threading
 import time
 
