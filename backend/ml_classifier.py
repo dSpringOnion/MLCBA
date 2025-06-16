@@ -135,10 +135,17 @@ class MLBehaviorClassifier:
     def load_model(self, filepath='behavior_model.pkl'):
         """Load trained model and scaler"""
         if os.path.exists(filepath):
-            model_data = joblib.load(filepath)
-            self.model = model_data['model']
-            self.scaler = model_data['scaler']
-            self.is_trained = model_data['is_trained']
-            print(f"Model loaded from {filepath}")
-            return True
+            try:
+                model_data = joblib.load(filepath)
+                self.model = model_data['model']
+                self.scaler = model_data['scaler']
+                self.is_trained = model_data['is_trained']
+                print(f"Model loaded from {filepath}")
+                return True
+            except Exception as e:
+                print(f"Error loading saved model: {e}")
+                print("Training new model instead...")
+                self.train_model()
+                self.save_model(filepath)
+                return True
         return False
