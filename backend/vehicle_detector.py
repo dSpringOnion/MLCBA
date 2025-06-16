@@ -3,10 +3,21 @@ import numpy as np
 from ultralytics import YOLO
 from collections import defaultdict, deque
 import math
+import torch
 
 class VehicleDetector:
     def __init__(self, model_path='yolov8n.pt'):
-        self.model = YOLO(model_path)
+        # Fix PyTorch weights_only loading issue
+        torch.serialization.add_safe_globals([])
+        try:
+            self.model = YOLO(model_path)
+        except Exception as e:
+            print(f"Error loading YOLO model: {e}")
+            # Try with older torch loading method
+            import os
+            os.environ['TORCH_SERIALIZATION_WEIGHTS_ONLY'] = 'False'
+            self.model = YOLO(model_path)
+        
         self.track_history = defaultdict(lambda: deque(maxlen=30))
         self.vehicle_classes = [2, 3, 5, 7]  # car, motorcycle, bus, truck
         
