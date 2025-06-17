@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { ProcessingResult, VideoAnalysisResult, UploadProgress } from '../types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://visionbasedvehiclebehavior-production.up.railway.app';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
