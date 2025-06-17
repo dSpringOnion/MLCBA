@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, File, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, File, X, CheckCircle } from 'lucide-react';
 import Button from '../ui/Button';
 import ProgressBar from '../ui/ProgressBar';
 import { uploadVideo } from '../../utils/api';

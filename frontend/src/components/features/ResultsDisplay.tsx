@@ -1,9 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Shield, Eye, TrendingUp, Car, Zap } from 'lucide-react';
+import { AlertTriangle, Shield, Eye, TrendingUp, Car } from 'lucide-react';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
-import { VideoAnalysisResult, VehicleDetection } from '../../types';
+import { VideoAnalysisResult } from '../../types';
 
 interface ResultsDisplayProps {
   results: VideoAnalysisResult;
