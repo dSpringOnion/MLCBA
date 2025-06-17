@@ -6,9 +6,10 @@ import Card from '../ui/Card';
 
 interface HeroProps {
   onGetStarted: () => void;
+  onWatchDemo?: () => void;
 }
 
-const Hero: React.FC<HeroProps> = ({ onGetStarted }) => {
+const Hero: React.FC<HeroProps> = ({ onGetStarted, onWatchDemo }) => {
   const features = [
     {
       icon: <Eye className="w-6 h-6" />,
@@ -75,6 +76,7 @@ const Hero: React.FC<HeroProps> = ({ onGetStarted }) => {
             <Button
               variant="secondary"
               size="lg"
+              onClick={onWatchDemo}
               className="px-8 py-4 text-lg font-semibold"
               icon={<Play className="w-5 h-5" />}
             >

@@ -1,11 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Play } from 'lucide-react';
 import Header from './components/layout/Header';
 import Hero from './components/features/Hero';
 import FileUpload from './components/features/FileUpload';
 import ResultsDisplay from './components/features/ResultsDisplay';
 import { VideoAnalysisResult } from './types';
+import { processSampleVideo } from './utils/api';
 
 function App() {
   const [showDemo, setShowDemo] = useState(false);
@@ -14,6 +16,13 @@ function App() {
   const demoRef = useRef<HTMLDivElement>(null);
 
   const handleGetStarted = () => {
+    setShowDemo(true);
+    setTimeout(() => {
+      demoRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+  const handleWatchDemo = () => {
     setShowDemo(true);
     setTimeout(() => {
       demoRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -35,13 +44,28 @@ function App() {
     setIsProcessing(false);
   };
 
+  const handleSampleVideoClick = async (videoId: string) => {
+    setIsProcessing(true);
+    setAnalysisResult(null);
+    
+    try {
+      const result = await processSampleVideo(videoId);
+      setAnalysisResult(result);
+    } catch (error) {
+      console.error('Error processing sample video:', error);
+      // You could add toast notification here
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <Header />
       
       <main className="relative">
         {/* Hero Section */}
-        <Hero onGetStarted={handleGetStarted} />
+        <Hero onGetStarted={handleGetStarted} onWatchDemo={handleWatchDemo} />
 
         {/* Demo Section */}
         <AnimatePresence>
@@ -147,19 +171,23 @@ function App() {
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       {[
-                        { name: 'Highway Traffic', risk: 'Low Risk', desc: 'Normal highway driving patterns' },
-                        { name: 'City Intersection', risk: 'Medium Risk', desc: 'Urban traffic with lane changes' },
-                        { name: 'Aggressive Driving', risk: 'High Risk', desc: 'Dangerous driving behaviors' }
+                        { id: 'highway_normal', name: 'Highway Traffic', risk: 'Low Risk', desc: 'Normal highway driving patterns' },
+                        { id: 'city_intersection', name: 'City Intersection', risk: 'Medium Risk', desc: 'Urban traffic with lane changes' },
+                        { id: 'aggressive_driving', name: 'Aggressive Driving', risk: 'High Risk', desc: 'Dangerous driving behaviors' }
                       ].map((sample, index) => (
                         <motion.div
                           key={sample.name}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.4, delay: 1 + index * 0.1 }}
+                          onClick={() => handleSampleVideoClick(sample.id)}
                           className="bg-white/70 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:shadow-lg transition-all duration-300 cursor-pointer"
                         >
-                          <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                            <div className="text-4xl">🚗</div>
+                          <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg mb-4 flex items-center justify-center relative overflow-hidden group">
+                            <div className="text-4xl group-hover:scale-110 transition-transform duration-300">🚗</div>
+                            <div className="absolute inset-0 bg-primary-600 bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 flex items-center justify-center">
+                              <Play className="w-8 h-8 text-primary-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            </div>
                           </div>
                           <h4 className="font-semibold text-gray-900 mb-2">{sample.name}</h4>
                           <p className="text-sm text-gray-600 mb-3">{sample.desc}</p>
