@@ -44,6 +44,8 @@ export interface VideoAnalysisResult {
     risky_vehicles: number;
     safe_vehicles: number;
   };
+  processed_video_path?: string;
+  video_id?: string;
 }
 
 export interface UploadProgress {

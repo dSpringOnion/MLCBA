@@ -21,11 +21,13 @@ CORS(app)
 # Configuration
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
 UPLOAD_FOLDER = 'uploads'
-SAMPLE_VIDEOS_FOLDER = 'sample_videos'
+SAMPLE_VIDEOS_FOLDER = os.path.join(os.path.dirname(__file__), 'sample_videos')
+PROCESSED_VIDEOS_FOLDER = 'processed_videos'
 
 # Ensure directories exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(SAMPLE_VIDEOS_FOLDER, exist_ok=True)
+os.makedirs(PROCESSED_VIDEOS_FOLDER, exist_ok=True)
 
 # Initialize components
 detector = VehicleDetector()
@@ -67,7 +69,7 @@ def upload_video():
         
         try:
             # Process video
-            results = process_video(temp_path)
+            results = process_video(temp_path, save_processed=True)
             return jsonify(results)
         finally:
             # Clean up temporary file
@@ -173,66 +175,63 @@ def get_sample_videos():
 def process_sample_video(video_id):
     """Process a sample video"""
     try:
-        # For demo purposes, return mock data based on video ID
-        if video_id == 'highway_normal':
-            results = {
-                'total_frames': 4500,
-                'processed_frames': 450,
-                'results': [
-                    {'frame': 10, 'id': 1, 'risk_level': 'SAFE', 'behavior_score': 15, 'ml_prediction': 'SAFE'},
-                    {'frame': 20, 'id': 2, 'risk_level': 'SAFE', 'behavior_score': 20, 'ml_prediction': 'SAFE'},
-                    {'frame': 30, 'id': 3, 'risk_level': 'SAFE', 'behavior_score': 12, 'ml_prediction': 'SAFE'},
-                ],
-                'summary': {
-                    'total_unique_vehicles': 8,
-                    'dangerous_vehicles': 0,
-                    'risky_vehicles': 0,
-                    'safe_vehicles': 8
-                }
-            }
-        elif video_id == 'city_intersection':
-            results = {
-                'total_frames': 3150,
-                'processed_frames': 315,
-                'results': [
-                    {'frame': 10, 'id': 1, 'risk_level': 'SAFE', 'behavior_score': 25, 'ml_prediction': 'SAFE'},
-                    {'frame': 20, 'id': 2, 'risk_level': 'RISKY', 'behavior_score': 45, 'ml_prediction': 'RISKY'},
-                    {'frame': 30, 'id': 3, 'risk_level': 'RISKY', 'behavior_score': 52, 'ml_prediction': 'RISKY'},
-                    {'frame': 40, 'id': 4, 'risk_level': 'SAFE', 'behavior_score': 18, 'ml_prediction': 'SAFE'},
-                ],
-                'summary': {
-                    'total_unique_vehicles': 12,
-                    'dangerous_vehicles': 0,
-                    'risky_vehicles': 4,
-                    'safe_vehicles': 8
-                }
-            }
-        elif video_id == 'aggressive_driving':
-            results = {
-                'total_frames': 5850,
-                'processed_frames': 585,
-                'results': [
-                    {'frame': 10, 'id': 1, 'risk_level': 'DANGEROUS', 'behavior_score': 85, 'ml_prediction': 'DANGEROUS'},
-                    {'frame': 20, 'id': 2, 'risk_level': 'RISKY', 'behavior_score': 65, 'ml_prediction': 'RISKY'},
-                    {'frame': 30, 'id': 3, 'risk_level': 'DANGEROUS', 'behavior_score': 92, 'ml_prediction': 'DANGEROUS'},
-                    {'frame': 40, 'id': 4, 'risk_level': 'SAFE', 'behavior_score': 22, 'ml_prediction': 'SAFE'},
-                ],
-                'summary': {
-                    'total_unique_vehicles': 6,
-                    'dangerous_vehicles': 3,
-                    'risky_vehicles': 2,
-                    'safe_vehicles': 1
-                }
-            }
-        else:
+        # Map video IDs to actual file names
+        video_files = {
+            'highway_normal': 'approaching (2).MP4',
+            'city_intersection': 'approaching (5).MP4', 
+            'aggressive_driving': 'change_lane (1).MP4'
+        }
+        
+        if video_id not in video_files:
             return jsonify({'error': 'Sample video not found'}), 404
         
+        video_path = os.path.join(SAMPLE_VIDEOS_FOLDER, video_files[video_id])
+        
+        # Check if video file exists
+        if not os.path.exists(video_path):
+            return jsonify({'error': f'Video file not found: {video_files[video_id]}. Please add your dashcam videos to the sample_videos folder.'}), 404
+        
+        # Process the actual video
+        results = process_video(video_path, save_processed=True)
         return jsonify(results)
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def process_video(video_path):
+@app.route('/processed_video/<video_id>')
+def get_processed_video(video_id):
+    """Serve processed video file"""
+    try:
+        video_path = os.path.join(PROCESSED_VIDEOS_FOLDER, f'processed_{video_id}.mp4')
+        
+        if not os.path.exists(video_path):
+            return jsonify({'error': 'Processed video not found'}), 404
+            
+        return send_file(video_path, mimetype='video/mp4')
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/retrain_model', methods=['POST'])
+def retrain_model():
+    """Retrain the ML model with accumulated real data"""
+    try:
+        # Retrain with real data
+        accuracy = classifier.train_model(use_real_data=True)
+        
+        # Save the updated model
+        classifier.save_model()
+        
+        return jsonify({
+            'message': 'Model retrained successfully',
+            'accuracy': accuracy,
+            'status': 'success'
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def process_video(video_path, save_processed=False):
     """Process entire video file"""
     try:
         cap = cv2.VideoCapture(video_path)
@@ -240,7 +239,19 @@ def process_video(video_path):
             raise ValueError("Could not open video file")
             
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        fps = int(cap.get(cv2.CAP_PROP_FPS))
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        
         all_results = []
+        processed_video_path = None
+        
+        # Setup video writer if saving processed video
+        if save_processed:
+            video_id = str(uuid.uuid4())
+            processed_video_path = os.path.join(PROCESSED_VIDEOS_FOLDER, f'processed_{video_id}.mp4')
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            out = cv2.VideoWriter(processed_video_path, fourcc, fps, (width, height))
         
         frame_idx = 0
         processed_frames = 0
@@ -251,11 +262,16 @@ def process_video(video_path):
                 break
             
             # Process every 10th frame for performance
+            annotated_frame = frame.copy()
             if frame_idx % 10 == 0:
                 try:
                     detections = detector.detect_vehicles(frame)
                     behaviors = analyzer.analyze_behavior(detections, frame.shape)
                     ml_results = classifier.predict(behaviors)
+                    
+                    # Save behavior data for training
+                    if behaviors:
+                        classifier.save_training_data(behaviors)
                     
                     frame_results = []
                     for vehicle_id in behaviors.keys():
@@ -265,10 +281,21 @@ def process_video(video_path):
                         frame_results.append({
                             'frame': frame_idx,
                             'id': vehicle_id,
+                            'center': vehicle_data['center'],
+                            'speed': round(vehicle_data['speed'], 2),
+                            'acceleration': round(vehicle_data['acceleration'], 2) if vehicle_data['acceleration'] else 0,
+                            'lane_changes': vehicle_data['lane_changes'],
+                            'erratic_movements': vehicle_data['erratic_movements'],
+                            'behavior_score': round(vehicle_data['behavior_score'], 2),
                             'risk_level': vehicle_data['risk_level'],
-                            'behavior_score': vehicle_data['behavior_score'],
-                            'ml_prediction': ml_data.get('prediction', 'UNKNOWN')
+                            'ml_prediction': ml_data.get('prediction', 'UNKNOWN'),
+                            'confidence': round(ml_data.get('confidence', 0) * 100, 1)
                         })
+                    
+                    # Draw annotations if we have detections
+                    if detections:
+                        annotated_frame = detector.draw_detections(frame, detections)
+                        annotated_frame = draw_behavior_info(annotated_frame, frame_results)
                     
                     all_results.extend(frame_results)
                     processed_frames += 1
@@ -276,16 +303,28 @@ def process_video(video_path):
                     print(f"Error processing frame {frame_idx}: {e}")
                     continue
             
+            # Write frame to output video if saving
+            if save_processed:
+                out.write(annotated_frame)
+            
             frame_idx += 1
         
         cap.release()
+        if save_processed:
+            out.release()
         
-        return {
+        result_data = {
             'total_frames': frame_count,
             'processed_frames': processed_frames,
             'results': all_results,
             'summary': generate_video_summary(all_results)
         }
+        
+        if save_processed and processed_video_path:
+            result_data['processed_video_path'] = processed_video_path
+            result_data['video_id'] = video_id
+        
+        return result_data
     
     except Exception as e:
         raise Exception(f"Video processing failed: {str(e)}")

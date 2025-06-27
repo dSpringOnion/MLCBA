@@ -26,11 +26,20 @@ class MLBehaviorClassifier:
         
         return np.array(features) if features else np.array([]).reshape(0, 5)
     
-    def train_model(self, training_data=None):
-        """Train the model with synthetic data or provided data"""
+    def train_model(self, training_data=None, use_real_data=True):
+        """Train the model with real processed data or synthetic data"""
         if training_data is None:
-            # Generate synthetic training data
-            X, y = self._generate_synthetic_data()
+            if use_real_data:
+                # Try to load real training data from processed videos
+                X, y = self._load_real_training_data()
+                if len(X) == 0:
+                    print("No real training data available, using synthetic data")
+                    X, y = self._generate_synthetic_data()
+                else:
+                    print(f"Using {len(X)} real training samples from processed videos")
+            else:
+                # Generate synthetic training data
+                X, y = self._generate_synthetic_data()
         else:
             X, y = training_data
         
@@ -118,6 +127,70 @@ class MLBehaviorClassifier:
             y.append('DANGEROUS')
         
         return np.array(X), np.array(y)
+    
+    def _load_real_training_data(self):
+        """Load real training data from processed video results"""
+        training_data_file = 'real_training_data.json'
+        
+        if not os.path.exists(training_data_file):
+            return np.array([]).reshape(0, 5), np.array([])
+        
+        try:
+            import json
+            with open(training_data_file, 'r') as f:
+                data = json.load(f)
+            
+            X = []
+            y = []
+            
+            for sample in data:
+                features = [
+                    sample['speed'],
+                    sample['acceleration'],
+                    sample['lane_changes'],
+                    sample['erratic_movements'],
+                    sample['behavior_score']
+                ]
+                X.append(features)
+                y.append(sample['risk_level'])
+            
+            return np.array(X), np.array(y)
+        
+        except Exception as e:
+            print(f"Error loading real training data: {e}")
+            return np.array([]).reshape(0, 5), np.array([])
+    
+    def save_training_data(self, behavior_data, filepath='real_training_data.json'):
+        """Save processed behavior data for training"""
+        import json
+        
+        # Load existing data
+        existing_data = []
+        if os.path.exists(filepath):
+            try:
+                with open(filepath, 'r') as f:
+                    existing_data = json.load(f)
+            except:
+                existing_data = []
+        
+        # Add new data
+        for vehicle_id, data in behavior_data.items():
+            training_sample = {
+                'vehicle_id': vehicle_id,
+                'speed': float(data.get('speed', 0)),
+                'acceleration': float(data.get('acceleration', 0)) if data.get('acceleration') is not None else 0,
+                'lane_changes': int(data.get('lane_changes', 0)),
+                'erratic_movements': int(data.get('erratic_movements', 0)),
+                'behavior_score': float(data.get('behavior_score', 0)),
+                'risk_level': data.get('risk_level', 'SAFE')
+            }
+            existing_data.append(training_sample)
+        
+        # Save updated data
+        with open(filepath, 'w') as f:
+            json.dump(existing_data, f, indent=2)
+        
+        print(f"Saved {len(behavior_data)} training samples to {filepath}")
     
     def save_model(self, filepath='behavior_model.pkl'):
         """Save trained model and scaler"""

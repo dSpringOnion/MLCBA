@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Shield, Eye, TrendingUp, Car } from 'lucide-react';
+import { AlertTriangle, Shield, Eye, TrendingUp, Car, Video } from 'lucide-react';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
+import VideoPlayer from '../ui/VideoPlayer';
 import { VideoAnalysisResult } from '../../types';
 
 interface ResultsDisplayProps {
@@ -34,6 +35,25 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, className = ''
 
   return (
     <div className={`space-y-6 ${className}`}>
+      {/* Processed Video Display */}
+      {results.video_id && (
+        <Card className="overflow-hidden">
+          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+              <Video className="w-5 h-5 mr-2 text-primary-600" />
+              Processed Video with Detections
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Watch the video with real-time vehicle behavior analysis and annotations
+            </p>
+          </div>
+          <VideoPlayer
+            videoUrl={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/processed_video/${results.video_id}`}
+            title="Processed Video Analysis"
+          />
+        </Card>
+      )}
+
       {/* Header with overall risk assessment */}
       <Card className="p-6 bg-gradient-to-r from-slate-50 to-blue-50">
         <div className="flex items-center justify-between">
