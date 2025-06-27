@@ -31,6 +31,9 @@ export const uploadVideo = async (
     },
   });
 
+  console.log('API Response status:', response.status);
+  console.log('API Response data:', response.data);
+  
   return response.data;
 };
 

@@ -43,6 +43,24 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete, onUploadStart
         setUploadProgress(progress);
       });
 
+      console.log('Upload result:', result);
+      console.log('Result type:', typeof result);
+      console.log('Result keys:', result ? Object.keys(result) : 'null/undefined');
+      
+      // Check if result has the expected structure
+      if (!result) {
+        console.error('Null/undefined result from server');
+        toast.error('No response from server. Please check your connection.');
+        return;
+      }
+      
+      if (!result.summary) {
+        console.error('Missing summary in result:', result);
+        toast.error('Video processed but analysis is incomplete. Try uploading a video with visible vehicles.');
+        return;
+      }
+
+      console.log('Summary:', result.summary);
       toast.success('Video processed successfully!');
       onUploadComplete(result);
     } catch (error) {
