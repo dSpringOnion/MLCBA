@@ -80,22 +80,41 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, className = ''
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Processed Video Display */}
-      {results.video_id && (
+      {results.video_id ? (
         <Card className="overflow-hidden">
           <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
               <Video className="w-5 h-5 mr-2 text-primary-600" />
-              Processed Video with Detections
+              {results.video_id.startsWith('demo_') ? 'Sample Video' : 'Processed Video with Detections'}
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              Watch the video with real-time vehicle behavior analysis and annotations
+              {results.video_id.startsWith('demo_') ? 
+                'Sample traffic footage showing the types of behaviors our system can detect' :
+                'Watch the video with real-time vehicle behavior analysis and annotations'
+              }
             </p>
           </div>
           <VideoPlayer
-            videoUrl={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/processed_video/${results.video_id}`}
-            title="Processed Video Analysis"
+            videoUrl={`${process.env.REACT_APP_API_URL || 'https://mlcba-production.up.railway.app'}/processed_video/${results.video_id}`}
+            title={results.video_id.startsWith('demo_') ? 'Sample Video' : 'Processed Video Analysis'}
           />
           <VideoNotice className="mt-3" />
+        </Card>
+      ) : (
+        <Card className="overflow-hidden">
+          <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+              <Video className="w-5 h-5 mr-2 text-amber-600" />
+              Video Analysis Complete
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Your video has been analyzed successfully. The behavioral analysis results are shown below.
+            </p>
+            <p className="text-xs text-amber-700 mt-2 bg-amber-100 p-2 rounded">
+              Note: Processed video with annotations is not available in the current deployment environment, 
+              but all analysis data has been computed from your uploaded video.
+            </p>
+          </div>
         </Card>
       )}
 

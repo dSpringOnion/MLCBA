@@ -173,9 +173,9 @@ def get_sample_videos():
 
 @app.route('/process_sample/<video_id>', methods=['POST'])
 def process_sample_video(video_id):
-    """Process a sample video"""
+    """Process a sample video with pre-processed demo videos"""
     try:
-        # Map video IDs to actual file names
+        # Map video IDs to actual file names and demo video IDs
         video_files = {
             'highway_normal': 'approaching (2).MP4',
             'city_intersection': 'approaching (5).MP4', 
@@ -191,8 +191,12 @@ def process_sample_video(video_id):
         if not os.path.exists(video_path):
             return jsonify({'error': f'Video file not found: {video_files[video_id]}. Please add your dashcam videos to the sample_videos folder.'}), 404
         
-        # Process the actual video
-        results = process_video(video_path, save_processed=True)
+        # Process the actual video for analysis, but use demo video_id for display
+        results = process_video(video_path, save_processed=False)
+        
+        # Add a demo video_id for sample videos (these will point to pre-processed demo videos)
+        results['video_id'] = f'demo_{video_id}'
+        
         return jsonify(results)
     
     except Exception as e:
@@ -202,12 +206,41 @@ def process_sample_video(video_id):
 def get_processed_video(video_id):
     """Serve processed video file"""
     try:
-        video_path = os.path.join(PROCESSED_VIDEOS_FOLDER, f'processed_{video_id}.mp4')
-        
-        if not os.path.exists(video_path):
-            return jsonify({'error': 'Processed video not found'}), 404
+        # Handle demo videos
+        if video_id.startswith('demo_'):
+            demo_id = video_id.replace('demo_', '')
+            demo_video_files = {
+                'highway_normal': 'demo_highway.mp4',
+                'city_intersection': 'demo_city.mp4',
+                'aggressive_driving': 'demo_aggressive.mp4'
+            }
             
-        return send_file(video_path, mimetype='video/mp4')
+            if demo_id in demo_video_files:
+                demo_path = os.path.join(SAMPLE_VIDEOS_FOLDER, demo_video_files[demo_id])
+                if os.path.exists(demo_path):
+                    return send_file(demo_path, mimetype='video/mp4')
+                else:
+                    # Fallback to original video if demo doesn't exist
+                    original_files = {
+                        'highway_normal': 'approaching (2).MP4',
+                        'city_intersection': 'approaching (5).MP4', 
+                        'aggressive_driving': 'change_lane (1).MP4'
+                    }
+                    original_path = os.path.join(SAMPLE_VIDEOS_FOLDER, original_files[demo_id])
+                    if os.path.exists(original_path):
+                        return send_file(original_path, mimetype='video/mp4')
+        
+        # Handle regular processed videos
+        video_path = os.path.join(PROCESSED_VIDEOS_FOLDER, f'processed_{video_id}.mp4')
+        if os.path.exists(video_path):
+            return send_file(video_path, mimetype='video/mp4')
+        
+        # Try .avi extension as fallback
+        video_path_avi = os.path.join(PROCESSED_VIDEOS_FOLDER, f'processed_{video_id}.avi')
+        if os.path.exists(video_path_avi):
+            return send_file(video_path_avi, mimetype='video/avi')
+        
+        return jsonify({'error': 'Processed video not found'}), 404
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
