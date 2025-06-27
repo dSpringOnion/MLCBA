@@ -14,12 +14,6 @@ interface ResultsDisplayProps {
 }
 
 const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, className = '' }) => {
-  const { summary } = results;
-  const totalVehicles = summary.total_unique_vehicles;
-  const dangerousCount = summary.dangerous_vehicles;
-  const riskyCount = summary.risky_vehicles;
-  const safeCount = summary.safe_vehicles;
-
   // Setup video cleanup on component unmount and page leave
   useEffect(() => {
     const videoId = results.video_id;
@@ -52,7 +46,23 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, className = ''
     };
   }, [results.video_id]);
 
+  // Add null checks to prevent crashes
+  if (!results || !results.summary) {
+    return (
+      <div className={`text-center py-8 ${className}`}>
+        <p className="text-gray-500">No analysis results available</p>
+      </div>
+    );
+  }
+
+  const { summary } = results;
+  const totalVehicles = summary.total_unique_vehicles || 0;
+  const dangerousCount = summary.dangerous_vehicles || 0;
+  const riskyCount = summary.risky_vehicles || 0;
+  const safeCount = summary.safe_vehicles || 0;
+
   const getRiskColor = (count: number, total: number) => {
+    if (total === 0) return 'text-gray-600';
     const percentage = (count / total) * 100;
     if (percentage > 50) return 'text-danger-600';
     if (percentage > 25) return 'text-warning-600';
@@ -167,13 +177,13 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, className = ''
                   <span className="text-sm font-medium text-gray-700">Dangerous</span>
                 </div>
                 <span className="text-sm text-gray-600">
-                  {((dangerousCount / totalVehicles) * 100).toFixed(1)}%
+                  {totalVehicles > 0 ? ((dangerousCount / totalVehicles) * 100).toFixed(1) : '0'}%
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
                   className="bg-danger-500 h-2 rounded-full transition-all duration-1000"
-                  style={{ width: `${(dangerousCount / totalVehicles) * 100}%` }}
+                  style={{ width: `${totalVehicles > 0 ? (dangerousCount / totalVehicles) * 100 : 0}%` }}
                 />
               </div>
 
@@ -183,13 +193,13 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, className = ''
                   <span className="text-sm font-medium text-gray-700">Risky</span>
                 </div>
                 <span className="text-sm text-gray-600">
-                  {((riskyCount / totalVehicles) * 100).toFixed(1)}%
+                  {totalVehicles > 0 ? ((riskyCount / totalVehicles) * 100).toFixed(1) : '0'}%
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
                   className="bg-warning-500 h-2 rounded-full transition-all duration-1000"
-                  style={{ width: `${(riskyCount / totalVehicles) * 100}%` }}
+                  style={{ width: `${totalVehicles > 0 ? (riskyCount / totalVehicles) * 100 : 0}%` }}
                 />
               </div>
 
@@ -199,13 +209,13 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, className = ''
                   <span className="text-sm font-medium text-gray-700">Safe</span>
                 </div>
                 <span className="text-sm text-gray-600">
-                  {((safeCount / totalVehicles) * 100).toFixed(1)}%
+                  {totalVehicles > 0 ? ((safeCount / totalVehicles) * 100).toFixed(1) : '0'}%
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
                   className="bg-success-500 h-2 rounded-full transition-all duration-1000"
-                  style={{ width: `${(safeCount / totalVehicles) * 100}%` }}
+                  style={{ width: `${totalVehicles > 0 ? (safeCount / totalVehicles) * 100 : 0}%` }}
                 />
               </div>
             </>
@@ -214,7 +224,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, className = ''
       </Card>
 
       {/* Detailed Results */}
-      {results.results.length > 0 && (
+      {results.results && results.results.length > 0 && (
         <Card className="p-6" glass>
           <h4 className="text-lg font-semibold text-gray-900 mb-4">Detection Timeline</h4>
           <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-hide">
