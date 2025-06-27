@@ -55,16 +55,42 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete, onUploadStart
         return;
       }
       
+      // Check if models are still loading (various response formats)
+      const resultAny = result as any;
+      if ((resultAny.message && resultAny.message.includes('endpoint ready') && resultAny.note && resultAny.note.includes('models finish loading')) ||
+          (resultAny.error && resultAny.error.includes('models are still loading')) ||
+          (resultAny.status === 'models_loading')) {
+        console.log('Models are still loading on server');
+        toast.error('AI models are still initializing. Please wait a few minutes and try again.');
+        return;
+      }
+      
       if (!result.summary) {
         console.error('Missing summary in result:', result);
         console.error('Expected summary field with: total_unique_vehicles, dangerous_vehicles, risky_vehicles, safe_vehicles');
         
-        // Check if we have results but no summary - try to create one
+        // Check if we have results but no summary - create a basic summary
         if (result.results && Array.isArray(result.results) && result.results.length > 0) {
-          console.log('Found results array but no summary. Attempting to create summary...');
-          // Let the component handle this case
+          console.log('Found results array but no summary. Creating basic summary from results...');
+          
+          // Create a basic summary from the results array
+          const vehicleIds = new Set(result.results.map((r: any) => r.id));
+          const riskCounts = result.results.reduce((acc: Record<string, number>, r: any) => {
+            const risk = r.risk_level || 'SAFE';
+            acc[risk] = (acc[risk] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>);
+          
+          result.summary = {
+            total_unique_vehicles: vehicleIds.size,
+            dangerous_vehicles: riskCounts.DANGEROUS || 0,
+            risky_vehicles: riskCounts.RISKY || 0,
+            safe_vehicles: riskCounts.SAFE || 0
+          };
+          
+          console.log('Created summary:', result.summary);
         } else {
-          toast.error('Video processed but no vehicles were detected. Try uploading a video with visible vehicles.');
+          toast.error('Video processed but no vehicles were detected. The video may not contain visible vehicles or the detection confidence may be too low.');
           return;
         }
       }

@@ -29,10 +29,19 @@ export const uploadVideo = async (
         onProgress(progress);
       }
     },
+    validateStatus: (status) => status < 600, // Don't throw for 5xx errors
   });
 
   console.log('API Response status:', response.status);
   console.log('API Response data:', response.data);
+  
+  // Handle 503 service unavailable (models loading)
+  if (response.status === 503) {
+    return {
+      error: response.data.error || 'Service temporarily unavailable',
+      status: response.data.status || 'models_loading'
+    } as any;
+  }
   
   return response.data;
 };
