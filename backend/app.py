@@ -270,9 +270,17 @@ def process_video(video_path, save_processed=False):
             print(f"Attempting to create processed video: {processed_video_path}")
             print(f"Video properties: {width}x{height} @ {fps} fps")
             
-            # Try different codecs for better compatibility
-            fourcc = cv2.VideoWriter_fourcc(*'XVID')
+            # Try different codecs for better compatibility  
+            # Try mp4v first, then fall back to MJPG if that fails
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
             out = cv2.VideoWriter(processed_video_path, fourcc, fps, (width, height))
+            
+            # If mp4v fails, try MJPG codec
+            if not out.isOpened():
+                print("mp4v codec failed, trying MJPG")
+                fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+                processed_video_path = processed_video_path.replace('.mp4', '.avi')  # MJPG works better with .avi
+                out = cv2.VideoWriter(processed_video_path, fourcc, fps, (width, height))
             
             # Check if VideoWriter was created successfully
             if not out.isOpened():
@@ -339,7 +347,7 @@ def process_video(video_path, save_processed=False):
             frame_idx += 1
         
         cap.release()
-        if save_processed and out is not None:
+        if save_processed and out is not None and processed_video_path:
             out.release()
             print(f"Video writer released. Checking if file exists: {processed_video_path}")
             if os.path.exists(processed_video_path):
