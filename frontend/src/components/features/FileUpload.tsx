@@ -46,6 +46,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete, onUploadStart
       console.log('Upload result:', result);
       console.log('Result type:', typeof result);
       console.log('Result keys:', result ? Object.keys(result) : 'null/undefined');
+      console.log('Full result object:', JSON.stringify(result, null, 2));
       
       // Check if result has the expected structure
       if (!result) {
@@ -56,8 +57,16 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete, onUploadStart
       
       if (!result.summary) {
         console.error('Missing summary in result:', result);
-        toast.error('Video processed but analysis is incomplete. Try uploading a video with visible vehicles.');
-        return;
+        console.error('Expected summary field with: total_unique_vehicles, dangerous_vehicles, risky_vehicles, safe_vehicles');
+        
+        // Check if we have results but no summary - try to create one
+        if (result.results && Array.isArray(result.results) && result.results.length > 0) {
+          console.log('Found results array but no summary. Attempting to create summary...');
+          // Let the component handle this case
+        } else {
+          toast.error('Video processed but no vehicles were detected. Try uploading a video with visible vehicles.');
+          return;
+        }
       }
 
       console.log('Summary:', result.summary);
