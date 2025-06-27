@@ -56,3 +56,12 @@ export const getHealthCheck = async () => {
   const response = await api.get('/health');
   return response.data;
 };
+
+export const cleanupVideo = async (videoId: string): Promise<void> => {
+  try {
+    await api.delete(`/cleanup_video/${videoId}`);
+  } catch (error) {
+    // Silently fail - video might already be cleaned up or not exist
+    console.warn(`Failed to cleanup video ${videoId}:`, error);
+  }
+};

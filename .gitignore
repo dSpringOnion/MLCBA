@@ -1,8 +1,8 @@
-# Large video files
-backend/sample_videos/*.MP4
-backend/sample_videos/*.mp4
-backend/sample_videos/*.avi
-backend/sample_videos/*.mov
+# Large video files - but allow sample videos since they use Git LFS
+# backend/sample_videos/*.MP4  # Commented out - using Git LFS now
+# backend/sample_videos/*.mp4  # Commented out - using Git LFS now  
+# backend/sample_videos/*.avi  # Commented out - using Git LFS now
+# backend/sample_videos/*.mov  # Commented out - using Git LFS now
 backend/processed_videos/*.mp4
 
 # Python cache

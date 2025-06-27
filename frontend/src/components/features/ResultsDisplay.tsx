@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Shield, Eye, TrendingUp, Car, Video } from 'lucide-react';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import VideoPlayer from '../ui/VideoPlayer';
+import VideoNotice from '../ui/VideoNotice';
 import { VideoAnalysisResult } from '../../types';
+import { cleanupVideo } from '../../utils/api';
 
 interface ResultsDisplayProps {
   results: VideoAnalysisResult;
@@ -17,6 +19,38 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, className = ''
   const dangerousCount = summary.dangerous_vehicles;
   const riskyCount = summary.risky_vehicles;
   const safeCount = summary.safe_vehicles;
+
+  // Setup video cleanup on component unmount and page leave
+  useEffect(() => {
+    const videoId = results.video_id;
+    
+    if (!videoId) return;
+
+    // Cleanup function for component unmount
+    const handleCleanup = () => {
+      cleanupVideo(videoId);
+    };
+
+    // Handle page refresh/close
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      // Trigger cleanup (fire-and-forget)
+      cleanupVideo(videoId);
+      
+      // Show browser warning about leaving page
+      event.preventDefault();
+      event.returnValue = 'Your processed video will be deleted if you leave this page.';
+      return event.returnValue;
+    };
+
+    // Add event listener
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // Cleanup function
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      handleCleanup();
+    };
+  }, [results.video_id]);
 
   const getRiskColor = (count: number, total: number) => {
     const percentage = (count / total) * 100;
@@ -51,6 +85,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results, className = ''
             videoUrl={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/processed_video/${results.video_id}`}
             title="Processed Video Analysis"
           />
+          <VideoNotice className="mt-3" />
         </Card>
       )}
 

@@ -146,27 +146,27 @@ def get_sample_videos():
     sample_videos = [
         {
             'id': 'highway_normal',
-            'name': 'Highway Traffic - Normal',
-            'description': 'Regular highway driving with normal traffic flow',
+            'name': 'Traffic Sample 1',
+            'description': 'Real dashcam footage - behavior will be analyzed by AI',
             'duration': '2:30',
-            'vehicles': 8,
-            'riskLevel': 'low'
+            'vehicles': 'TBD',
+            'riskLevel': 'unknown'
         },
         {
             'id': 'city_intersection',
-            'name': 'City Intersection - Moderate',
-            'description': 'Urban intersection with lane changes and moderate traffic',
+            'name': 'Traffic Sample 2',
+            'description': 'Real dashcam footage - behavior will be analyzed by AI',
             'duration': '1:45',
-            'vehicles': 12,
-            'riskLevel': 'medium'
+            'vehicles': 'TBD',
+            'riskLevel': 'unknown'
         },
         {
             'id': 'aggressive_driving',
-            'name': 'Aggressive Driving - High Risk',
-            'description': 'Footage containing aggressive and dangerous driving behaviors',
+            'name': 'Traffic Sample 3',
+            'description': 'Real dashcam footage - behavior will be analyzed by AI',
             'duration': '3:15',
-            'vehicles': 6,
-            'riskLevel': 'high'
+            'vehicles': 'TBD',
+            'riskLevel': 'unknown'
         }
     ]
     return jsonify(sample_videos)
@@ -208,6 +208,21 @@ def get_processed_video(video_id):
             return jsonify({'error': 'Processed video not found'}), 404
             
         return send_file(video_path, mimetype='video/mp4')
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/cleanup_video/<video_id>', methods=['DELETE'])
+def cleanup_video(video_id):
+    """Delete a processed video (called when user leaves session)"""
+    try:
+        video_path = os.path.join(PROCESSED_VIDEOS_FOLDER, f'processed_{video_id}.mp4')
+        
+        if os.path.exists(video_path):
+            os.remove(video_path)
+            return jsonify({'message': 'Video cleaned up successfully', 'status': 'success'})
+        else:
+            return jsonify({'message': 'Video not found', 'status': 'not_found'}), 404
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500

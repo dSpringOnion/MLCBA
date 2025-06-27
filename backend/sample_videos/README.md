@@ -13,10 +13,30 @@ Place your dashcam videos here for processing as sample videos.
 
 ## How to Add Your Videos:
 
-1. Download your dashcam videos from iCloud to your computer
-2. Rename them to match the expected filenames above
+### Option 1: Download Demo Videos (Recommended)
+Run the download script from the project root:
+```bash
+python3 download_demo_videos.py
+```
+
+### Option 2: Use Your Own Videos
+1. Download your dashcam videos to your computer
+2. Rename them to match the current expected filenames:
+   - `approaching (2).MP4`
+   - `approaching (5).MP4`  
+   - `change_lane (1).MP4`
 3. Copy them to this directory: `backend/sample_videos/`
 4. The system will automatically process them when you click "Watch Demo" samples
+
+### Option 3: Use Different Filenames
+If you have different video files, update the filename mapping in `backend/app.py`:
+```python
+video_files = {
+    'highway_normal': 'your-highway-video.mp4',
+    'city_intersection': 'your-city-video.mp4', 
+    'aggressive_driving': 'your-aggressive-video.mp4'
+}
+```
 
 ## Video Requirements:
 - Recommended resolution: 720p or higher
