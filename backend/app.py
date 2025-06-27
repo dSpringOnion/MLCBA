@@ -260,13 +260,27 @@ def process_video(video_path, save_processed=False):
         
         all_results = []
         processed_video_path = None
+        video_id = None
+        out = None
         
         # Setup video writer if saving processed video
         if save_processed:
             video_id = str(uuid.uuid4())
             processed_video_path = os.path.join(PROCESSED_VIDEOS_FOLDER, f'processed_{video_id}.mp4')
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            print(f"Attempting to create processed video: {processed_video_path}")
+            print(f"Video properties: {width}x{height} @ {fps} fps")
+            
+            # Try different codecs for better compatibility
+            fourcc = cv2.VideoWriter_fourcc(*'XVID')
             out = cv2.VideoWriter(processed_video_path, fourcc, fps, (width, height))
+            
+            # Check if VideoWriter was created successfully
+            if not out.isOpened():
+                print(f"Warning: Could not create video writer for {processed_video_path}")
+                save_processed = False
+                out = None
+            else:
+                print(f"Video writer created successfully")
         
         frame_idx = 0
         processed_frames = 0
@@ -319,14 +333,20 @@ def process_video(video_path, save_processed=False):
                     continue
             
             # Write frame to output video if saving
-            if save_processed:
+            if save_processed and out is not None:
                 out.write(annotated_frame)
             
             frame_idx += 1
         
         cap.release()
-        if save_processed:
+        if save_processed and out is not None:
             out.release()
+            print(f"Video writer released. Checking if file exists: {processed_video_path}")
+            if os.path.exists(processed_video_path):
+                file_size = os.path.getsize(processed_video_path)
+                print(f"Processed video saved successfully: {file_size} bytes")
+            else:
+                print(f"Error: Processed video file was not created")
         
         result_data = {
             'total_frames': frame_count,
@@ -335,9 +355,12 @@ def process_video(video_path, save_processed=False):
             'summary': generate_video_summary(all_results)
         }
         
-        if save_processed and processed_video_path:
+        if save_processed and processed_video_path and os.path.exists(processed_video_path):
             result_data['processed_video_path'] = processed_video_path
             result_data['video_id'] = video_id
+            print(f"Including video_id in response: {video_id}")
+        else:
+            print("Video not saved successfully, excluding video_id from response")
         
         return result_data
     
