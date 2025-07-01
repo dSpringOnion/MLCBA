@@ -130,10 +130,21 @@ class MLBehaviorClassifier:
     
     def _load_real_training_data(self):
         """Load real training data from processed video results"""
-        training_data_file = 'real_training_data.json'
-        
+        # Ensure this path is relative to the backend directory, or use an absolute path strategy
+        # For now, assume the file is in the 'backend' subdirectory if app_production.py is in root
+        # If ml_classifier.py is run directly from backend/, then 'real_training_data.json' is fine
+        # Given app_production.py calls it, this path needs care.
+        # The save_training_data is now called with 'backend/real_training_data.json'
+        # So this load should also point there.
+        training_data_file = os.path.join(os.path.dirname(__file__), 'real_training_data.json')
         if not os.path.exists(training_data_file):
-            return np.array([]).reshape(0, 5), np.array([])
+            # Attempt fallback for when app_production.py runs from root and this file is in backend/
+            alt_training_data_file = 'backend/real_training_data.json'
+            if os.path.exists(alt_training_data_file):
+                training_data_file = alt_training_data_file
+            else:
+                print(f"Training data file not found at {training_data_file} or {alt_training_data_file}")
+                return np.array([]).reshape(0, 5), np.array([])
         
         try:
             import json
