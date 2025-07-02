@@ -27,7 +27,8 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "serve": "npm run build && serve -s build -l $PORT",
+    "serve": "npm run build && serve -s build -l ${PORT:-3000}",
+    "start:prod": "serve -s build -p $PORT",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "vercel-build": "react-scripts build"
