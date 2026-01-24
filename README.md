@@ -152,9 +152,9 @@ The system provides comprehensive analysis including:
 ## 👨‍💻 Developer
 
 **Daniel Park**
-- Portfolio: [Your Portfolio URL]
-- GitHub: [@danielpark](https://github.com/danielpark)
-- LinkedIn: [Your LinkedIn]
+- Portfolio: (https://currentportfolio-production.up.railway.app/)
+- GitHub: [@danielpark](https://github.com/dSpringOnion)
+- LinkedIn: www.linkedin.com/in/dbdbdev
 
 ## 📄 License
 
